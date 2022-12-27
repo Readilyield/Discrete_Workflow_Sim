@@ -11,19 +11,19 @@ numpy, scipy, pandas, matplotlib
 This folder contains all the testing functions/files for recording and displaying the simulations results.
 
 #### Epsilon_test.ipynb
-This file contains a basic simulation test with varying epsilon value
+	This file contains a basic simulation test with varying epsilon value
 
 #### Job_length_test.ipynb
-This file contains the test for varying job length
+	This file contains the test for varying job length
 
 #### Job_scale_test.ipynb
-This file contains the test for varying job scales at focused configurations
+	This file contains the test for varying job scales at focused configurations
 
 #### Wait_time_pred_test.ipynb
-This file contains the test for recording indivdual simulation's waiting time and outstanding time distribution
+	This file contains the test for recording indivdual simulation's waiting time and outstanding time distribution
 
 #### Scatter_dist_plot.ipynb
-This file contains the test for recording simulations' average waiting distribution using randomly generated data
+	This file contains the test for recording simulations' average waiting distribution using randomly generated data
 
 ### - Utils folder
 
@@ -32,7 +32,6 @@ This folder contains all the utility functions for running the simulations and p
 #### Sim1_Util.py
 This file contains the basic plotting functions
 
-	|- Sim1_Util.py: 
      Simulation related:
       |- roundhalf:       rounds to integers
       |- poisson_sim:     models Poisson arrival
@@ -53,7 +52,6 @@ This file contains the .csv-related functions
 
 **Note:** all the data .csv files need to be stored locally. You can specify customized path to these .csv files when calling the correspondent functions
 
-	|- Sim13_ecl_Util.py: 
      ECL data related:
       |- data_to_csv:     replaces NaN values with -1 in the original .csv data
       |- csv_to_jobs:     reads .csv data and produces a job dict 
@@ -68,7 +66,6 @@ This file contains the .csv-related functions
 #### Sim13_Classes.py
 This file contains all the essential class objects for the simulation
 
-	|- Sim13_Classes.py: 
       |- class customer:  generates a customer to submit ptcls at a fixed rate
       |- class protocol:  generates a ptcl with status, operating time, pause probability, release time
       |- class operator:  generates an operator with status to grab, process, and dispose ptcls
@@ -78,7 +75,6 @@ This file contains all the essential class objects for the simulation
 #### Sim13_Init.py
 This file contains the key simulation function for randomly generted jobs
 
-	|- Sim13_Init.py: 
       |- initialize:      generates an empty onthread, a backlog with initial jobs, idle operators, and customers
       |- sim_run:         performs one workflow simulation under a given timespan, this is the key function
       
@@ -86,14 +82,12 @@ This file contains the key simulation function for randomly generted jobs
 This file contains the key simulation function that incorporates ECL .csv data
 The only difference from Sim13_Init.py is that the simulated jobs are sampled from the ECL data
 
-	|- Sim13_ecl_Init.py: 
       |- initialize:      generates an empty onthread, a backlog with initial jobs, idle operators, and customers
       |- sim_run:         performs one workflow simulation under a given timespan, this is the key function
 
 #### Sim13_Batch.py
 This file contains the functions that conduct batch-testing simulations and reports
 
-	|- Sim13_Batch.py: 
       Batch-testing related:
       |- test_runs:      running and recording simulations, with the only variable being the operator number
       |- setup:          produces an array of test_param, each test_param is a dictionary specifying the simulation configurations
@@ -109,7 +103,6 @@ This file contains the functions that conduct batch-testing simulations and repo
 This file contains the functions that conduct batch-testing simulations and reports
 The only difference from Sim13_Batch.py is that the simulated jobs are sampled from the ECL data
 
-	|- Sim13_ecl_Batch.py: 
       Batch-testing related:
       |- test_batch_wpic: 	   conducts a systematic batch-test and outputs the .csv data and the graphs
       |- test_runs:      running and recording simulations, with the only variable being the operator number
