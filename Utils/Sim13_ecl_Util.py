@@ -142,10 +142,9 @@ def plot_scatter(test_res, pause_probs = [0,1], save = (False,''), code=''):
     plot_2D(plot_info,title,input_label,output_label,bloc='best',save=save)
     
 
-def get_multiplier(k, tol = 0.01, length = 300, check = False):
+def get_multiplier(k, tol = 0.01, length = 300, check = False, path = None):
     '''returns the multiplier s.t. (mean_ot'+1)=k*(mean_ot+1) within tol-difference'''
-
-    path = "ecldata/ecldata_without_float.csv"
+    assert(path is not None)
     jobs, jobs_prob, mean_ot_s, total_ot, total_jobs = csv_to_jobs(path, mul=1)
     '''rounding up/down lambda acceptable?'''
     
