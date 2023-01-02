@@ -57,11 +57,11 @@ def test_batch_wpic(jobs, jobs_prob, mean_ot, total_ot, total_jobs,
     else:
         var = 'novar'
 
-    new_path = f'level_curve_dt/{code}_{f_lam}ecl_{pois}_{var}_{cus}cus.csv'
+    new_path = f'../level_curve_dt/{code}_{f_lam}ecl_{pois}_{var}_{cus}cus.csv'
     res_to_csv(test_res, colnames, rownum, new_path)
     if plots[0]:
         plot_scatter(test_res, pause_probs = pause_probs, 
-                     save=(True,f'pic/{code}_avgwt_{f_lam}ecl_{pois}_{var}_{cus}cus_{runs}runs'))
+                     save=(True,f'../pic/{code}_avgwt_{f_lam}ecl_{pois}_{var}_{cus}cus_{runs}runs'))
     
     test_res_prob = [0]*len(pause_probs)
     for i in range(len(pause_probs)):
@@ -82,17 +82,17 @@ def test_batch_wpic(jobs, jobs_prob, mean_ot, total_ot, total_jobs,
                 plot_multi_QueuesTime(slice_prob[j], attr='eps', 
                                   title = f'Avg.Ot={mean_ot}+1, job scale={f_lam*cus_num}, P={P_prob[j]}, {runs}runs', buffer_time = 24*30, 
                                   plot = True, 
-                                  save=(True,f'pic/QueueTime/{code}_s{i}_P={P_prob[j]}_{pois}_{var}_{scale}scale'))
+                                  save=(True,f'../pic/QueueTime/{code}_s{i}_P={P_prob[j]}_{pois}_{var}_{scale}scale'))
             if plots[2]:
                 plot_multi_WaitTime(slice_prob[j], attr='eps', 
                                 title = f'Avg.Ot={mean_ot}+1, job scale={f_lam*cus_num}, P={P_prob[j]}, {runs}runs', buffer_time = 24*30, 
                                 plot = True, 
-                                save=(True,f'pic/WaitTime/{code}_s{i}_P={P_prob[j]}_{pois}_{var}_{scale}scale'))
+                                save=(True,f'../pic/WaitTime/{code}_s{i}_P={P_prob[j]}_{pois}_{var}_{scale}scale'))
             if plots[3]:
                 plot_multi_OutstandTime(slice_prob[j], attr='eps', 
                                 title = f'Avg.Ot={mean_ot}+1, job scale={f_lam*cus_num}, P={P_prob[j]}, {runs}runs', buffer_time = 24*30, 
                                 plot = True, 
-                                save=(True,f'pic/OutstandTime/{code}_s{i}_P={P_prob[j]}_{pois}_{var}_{scale}scale'))
+                                save=(True,f'../pic/OutstandTime/{code}_s{i}_P={P_prob[j]}_{pois}_{var}_{scale}scale'))
 
 
 
