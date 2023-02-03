@@ -1,9 +1,6 @@
-# ECL_simulation
- simulation code for ECL
+# ECL_data
 
+## ecldata_without_float
+This file contains ECL protocol data without outliers, and all NA values are replaced by -1.
+So all the data inside the file is now represented as float.
 
-Sim 1.3
-Basic simulation skeleton with job pause probability
-Deterministic tests with fixed configuration data 
-(arrival rates, operating time, pause-release time)
-Incorporated real-world data from ECL
