@@ -6,6 +6,14 @@
 Required python packages:
 numpy, scipy, pandas, matplotlib
 
+### - ECL_data folder
+
+This folder contains the raw data.
+
+### - R_code folder
+
+This folder contains the r code for statistical modeling.
+
 ### - Tests folder
 
 This folder contains all the testing functions/files for recording and displaying the simulations results.
@@ -13,4 +21,12 @@ This folder contains all the testing functions/files for recording and displayin
 ### - Utils folder
 
 This folder contains all the utility functions for running the simulations and plotting the graphs.
+
+### - level_curve_dt folder
+
+This folder contains the dataframe files generated from simulations.
+
+### - pic folder
+
+This folder contains the plots that illustrates the data in the *level_curve_dt* folder.
 
