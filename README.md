@@ -1,5 +1,5 @@
 ## ECL Discrete Workflow Simulation:
-### This mini repository aims to simulate a discrete workflow of ECL operations and analyze the relation between average waiting time and the number of active operator posts.
+### This mini repository aims to simulate a discrete workflow of ECL operations and analyze the relation between the average waiting time and the number of active operator posts.
 #### Version 1.3
 *by Ricky Huang*
 
