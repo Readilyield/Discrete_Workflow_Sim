@@ -1,0 +1,144 @@
+---
+title: "ecl data process"
+author: "kaiwenli"
+date: "11/5/2022"
+output: pdf_document
+---
+# Raw data process to eliminate outlier (ie.runtime>totaltime or runtime being too long)
+
+```{r}
+getwd()
+filedir <- getwd()
+  #setwd("Users/kaiwenli/Downloads/Protocol Runtime Files")
+file_names <- dir(filedir)[2:65]
+
+```
+
+```{r}
+library(plyr)
+library(dplyr)
+library(readr)
+getwd()
+filedir <- getwd()
+
+myfiles = list.files(path=filedir, pattern="*.csv", full.names=TRUE)
+myfiles
+dat_csv = ldply(myfiles, read_csv)
+
+dat<-dat_csv
+dat <- rbind(colnames(dat), dat)
+# Assign numbers as column names
+
+colnames(dat) <- paste0('ptcl', seq_len(ncol(dat))/2+0.5, 'opt')
+
+
+
+```
+
+
+```{r}
+library(data.table)
+# Helper function:
+shift_up <- function(x) {
+  n <- length(x)
+  x <- x[!is.na(x)]
+  length(x) <- n
+  x
+}
+
+
+
+
+df<-dat
+library(data.table)
+df1 <- setDT(df)[,  lapply(.SD, function(x) x[order(is.na(x))])]
+df1[df1[,!Reduce(`&`, lapply(.SD, is.na))]]
+
+
+write.csv(df1,"/Users/kaiwenli/Downloads/ecldata.csv", row.names = FALSE)
+
+as.numeric(unlist(df1[,1]))
+
+
+```
+
+```{r}
+
+class(df1$ptcl1opt)
+seq_len(ncol(df1))/2
+df2<-df1
+for (i in 1:64){
+  print(i)
+}
+
+for (i in 1:64){
+  quartiles <- quantile(na.omit(as.numeric(unlist(df1[,i*2,with=FALSE]))), probs=c(.25, .75), na.rm = FALSE)
+  IQR <- IQR(na.omit(as.numeric(unlist(df1[,i*2,with=FALSE]))))
+  up <- quartiles[2] + 1.5*IQR 
+  del<-which(na.omit(as.numeric(unlist(df1[,i*2,with=FALSE])))>up)
+  for (j in del){
+    df2[j,i*2-1]<-NA
+    df2[j,i*2]<-NA
+  }
+
+}
+
+quartiles <- quantile(na.omit(as.numeric(unlist(df1[,i*2]))), probs=c(.25, .75), na.rm = FALSE)
+IQR <- IQR(na.omit(as.numeric(unlist(df1[,i*2]))))
+ 
+df2<-df1
+
+up <- quartiles[2] + 1.5*IQR 
+del<-which(na.omit(as.numeric(unlist(df1[,10])))>up)
+del
+
+ 
+```
+
+```{r}
+dfre <- setDT(df2)[,  lapply(.SD, function(x) x[order(is.na(x))])]
+dfre[dfre[,!Reduce(`&`, lapply(.SD, is.na))]]
+dfre
+
+write.csv(dfre,"/Users/kaiwenli/Downloads/ecldata_without.csv", row.names = FALSE)
+
+for (i in 1){
+  k<-na.omit(as.numeric(unlist(df1[,i*2])))-na.omit(as.numeric(unlist(df1[,i*2-1])))
+}
+
+dfw<-read.csv("ecldata_without.csv")
+which(na.omit(as.numeric(unlist(dfw[,2])))<na.omit(as.numeric(unlist(dfw[,1]))))
+#delete 
+dfw2<-dfw
+for (i in 1:64){
+  del2<-which(na.omit(as.numeric(unlist(dfw2[,i*2])))
+              <na.omit(as.numeric(unlist(dfw2[,i*2-1]))))
+  print(del2)
+  for (j in del2){
+    dfw2[j,i*2-1]<-NA
+    dfw2[j,i*2]<-NA
+  }
+
+}
+dfre2 <- setDT(dfw2)[,  lapply(.SD, function(x) x[order(is.na(x))])]
+dfre2[dfre2[,!Reduce(`&`, lapply(.SD, is.na))]]
+write.csv(dfre2,"/Users/kaiwenli/Downloads/ecldata_without_re.csv", row.names = FALSE)
+for (i in 1:64){
+  del3<-which(na.omit(as.numeric(unlist(dfre2[,i*2])))
+              <na.omit(as.numeric(unlist(dfre2[,i*2-1]))))
+  print(del3)
+
+
+}
+```
+
+```{r}
+wt<-read.csv("eclwt.csv")
+wtf<-wt
+wtf<-wt[-c(2,3)]
+for (i in 2:65){
+  wtf<-wtf[-c(i,with=FALSE)]
+}
+write.csv(wtf,"/Users/kaiwenli/Downloads/ecldata_wait.csv", row.names = FALSE)
+```
+
