@@ -1,0 +1,557 @@
+---
+title: "ecl"
+author: "kaiwenli"
+date: "10/30/2022"
+output: 
+  pdf_document:
+    toc: yes
+    latex_engine : xelatex
+---
+## Data imports
+```{r}
+test<-read.csv("test1_df.csv")
+testd<-read.csv("test1_determ_df.csv")
+test1n<-read.csv("eclp2.csv")
+z1<-read.csv("1.2_1ot_EFop_10ecl_pois_var_1cus.csv")
+z05<-read.csv("1.2_0.5ot_EFop_20ecl_pois_var_1cus.csv")
+z2<-read.csv("new1.2_2ot_EFop_5ecl_pois_var_1cus.csv")
+# z4<-read.csv("zm0.1_3p_40ecl_pois_var_1cus.csv")
+z5<-read.csv("new1.2_5ot_EFop_2ecl_pois_var_1cus.csv")
+z33<-read.csv("zm_3p_10ecl_pois_var_3cus.csv")
+zc<-read.csv("10ecl_pois_var_P1_0eps_10runs.csv")
+zn<-read.csv("new_10ecl_pois_var_P=0_0.2eps_20runs.csv")
+z10<-read.csv("1.2[0,0.3]_2p_10ecl_pois_var_1cus.csv")
+z30<-read.csv("1.2[0,0.3]_2p_30ecl_pois_var_1cus.csv")
+z50<-read.csv("1.2[0,0.3]_2p_50ecl_pois_var_1cus.csv")
+
+```
+
+```{r}
+library(astsa)
+library(tsbox)
+library(xts)
+```
+
+
+```{r}
+library(tidyr)
+
+library(Hmisc)
+zc$outstand.0<-Lag(zc$outstand.0,100)
+dt<-as.Date(zc$X)
+is.na(zc$wait.0)<-!zc$wait.0
+# zc %>% drop_na(wait.0)
+zc<-na.omit(zc)
+#out0 <- xts(zc$outstand.0, dt)
+o0<-ts(zc$outstand.0)
+#que0 <- xts(zc$queue.0, dt)
+q0<-ts(zc$queue.0)
+#wt0 <- xts(zc$wait.0, dt)
+w0<-ts(zc$wait.0)
+val=ccf(o0,w0)
+val
+#lag2.plot(out0,que0,5,pch=20)
+#plot(zc$queue.0)
+#plot(zc$outstand.0)
+cor(o0,w0)
+rc<-rollapply(zc, width=200, 
+                   function(x) cor(as.numeric(x[,1]),as.numeric(x[,2]), method = "pearson"),
+                   by.column=FALSE)
+plot(rc)
+```
+
+## Mean Outstanding Time and Waiting Time, Possible Lag
+```{r}
+library(ggplot2)
+
+zn<-zn[-(1:240),]
+znn<-zn
+ggplot(zn)+
+  geom_point(aes(x=X, y=(meanwait.1*2),color="wait"))+
+  geom_point(aes(x=X, y=meanoutstand.1,color="outstand"))+
+  
+  scale_y_continuous(sec.axis = sec_axis(~./2, name="waiting hours"))+
+  labs(title="wait vs outstand",x="time",y="outstanding hours")
+```
+
+
+```{r}
+rmo<-rollmean(znn[,5],300)
+plot(rmo)
+znn[,6]<-replace(znn[,6], znn[,6] == 0, NA)
+rmw<-rollmean(znn[,6],300,na.rm = TRUE)
+rmk<-rollmean(znn[,3],300)
+print(rmw)
+plot(rmw)
+znn$X[1:(6960-300)]
+ow<-data.frame(rmo,rmw,znn$X[1:(6960-299)],rmk)
+
+#waiting time and mean outstanding time
+ggplot(ow)+
+  geom_point(aes(x=znn$X[1:(6960-299)], y=(rmw*2),color="wait"))+
+  geom_point(aes(x=znn$X[1:(6960-299)], y=rmo,color="outstand"))+
+  
+  scale_y_continuous(sec.axis = sec_axis(~./2, name="waiting hours"))+
+  labs(title="wait vs outstand",x="time",y="outstanding hours")
+
+# workratio and wait
+ggplot(ow)+
+  geom_point(aes(x=znn$X[1:(6960-299)], y=(rmw),color="wait"))+
+  geom_point(aes(x=znn$X[1:(6960-299)], y=rmk*20,color="workratio"))+
+  
+  scale_y_continuous(sec.axis = sec_axis(~./20, name="work ratio"))+
+  labs(title="wait vs work ratio",x="time",y="waiting hours")
+```
+
+
+```{r}
+# workratio and wait
+ccf(rmw,rmk,300)
+
+#waiting time and mean outstanding time
+ccf(rmw,rmo,300)
+
+  # rollapply(znn, width=200, 
+  #                  function(x) mean(as.numeric(x[,5]),as.numeric(x[,7])),
+  #                  by.column=FALSE)
+plot(rc)
+owt<-ow
+
+for (i in (1:160)){
+  owt<-(transform(owt,rmw=c(rmw[-1],NA)))
+}
+owt<-na.omit(owt)
+
+rc<-rollapply(owt, width=2400, 
+                   function(x) cor(as.numeric(x[,1]),as.numeric(x[,2]), method = "pearson"),
+                   by.column=FALSE)
+plot(rc, ylab = "rolling correlation", xlab="Time Index")
+
+
+
+ggplot(owt)+
+  geom_point(aes(x=znn$X[161:(6960-299)], y=(rmw*2),color="wait"))+
+  geom_point(aes(x=znn$X[161:(6960-299)], y=rmo,color="outstand"))+
+  
+  scale_y_continuous(sec.axis = sec_axis(~./2, name="waiting hours"))+
+  labs(title="wait vs outstand",x="time",y="outstanding hours")
+```
+
+
+## Data processing and exploratory data analysis
+```{r}
+z135<-rbind(rbind(rbind(z1,z05),z2),z5)
+
+# z135<-z135[,-14]
+# z135<-rbind(z135,z33)
+# z333<-rbind(z3[,-14],z33)
+nrow(z135)
+
+z1352<-(rbind(rbind(z10,z30),z50))
+z1353<-rbind(z135,z1352)
+
+z1350<-subset(z1353, z1353$pause_prob==0)
+z1350b<-subset(z1350, z1350$avg_wt<40)
+
+z13510<-subset(z135, z135$pause_prob==0)
+z13510b<-subset(z13510, z13510$avg_wt<40)
+
+z13520<-subset(z1352, z1352$pause_prob==0)
+z13520b<-subset(z13520, z13520$avg_wt<40)
+
+```
+
+
+```{r}
+testd2<-subset(testd,testd$eps>0)
+testdp<-subset(testd2, testd2$pause_prob==1)
+testdnp<-subset(testd2, testd2$pause_prob==0)
+
+#test1n<-subset(test1n,test1n$eps<0.3)
+test1n<-subset(test1n,test1n$eps>0)
+test1np<-subset(test1n, test1n$pause_prob==1)
+test1nnp<-subset(test1n, test1n$pause_prob==0)
+```
+
+
+```{r}
+test2<-subset(test,test$eps>0)
+head(test2)
+testp<-subset(test2, test2$pause_prob==1)
+testnp<-subset(test2, test2$pause_prob==0)
+```
+
+
+```{r}
+hist(test$cus_num, xlab="customer num", ylab="density", prob=T, main="", cex.axis=1.3,cex.lab=1.3, col = 4)
+hist(test$eps, xlab="epsilon", ylab="density", prob=T, main="", cex.axis=1.3,cex.lab=1.3, col = 4)
+hist((test$avg_wt), xlab="waiting time", ylab="density", prob=T, main="", cex.axis=1.3,cex.lab=1.3, col = 4)
+head(z135)
+```
+```{r}
+#eda
+par(mfrow=c(2,2))
+hist((z1350b$avg_wt), xlab="Waiting Time", ylab="Density", prob=T, main="Waiting Time Distribution", cex.axis=1.3,cex.lab=1.3, col = 4)
+boxplot((z1350b$avg_wt), xlab="Waiting Time")
+
+hist(log(z1350b$avg_wt), xlab="Log wt", ylab="Density", prob=T, main="Log wt Distribution", cex.axis=1.3,cex.lab=1.3, col = 4)
+boxplot(log(z1350b$avg_wt), xlab="Log wt")
+summary(z1350b)
+```
+
+
+
+```{r}
+#multi eda
+pairs((op_num)~log(avg_wt)+mean_ot+fix_lam+mean_ot*fix_lam, data=z1350b, pch=16, cex=0.5,col=2) #paused
+Names = c("","op_num","cus_num","pause_prob","fix_lam","rls","7","8","eps","bf","avg_qsz","","avg_wt","job_scale","mean_ot")
+par(mfrow=c(1,2)) 
+for(j in c(14,15)){
+  for(i in c(13)){
+    boxplot(log(z1350[,i]) ~ z1350[,j], xlab = Names[j], ylab=Names[i])
+  } 
+}
+pairs((avg_wt)~(op_num)+eps, data=test1nnp, pch=16, cex=0.5,col=2)
+```
+
+
+```{r}
+z1350<-subset(z135, z135$pause_prob==0)
+z1351<-subset(z135, z135$pause_prob==1)
+z1355<-subset(z135, z135$pause_prob==0.5)
+
+z13510$color<-"pink"
+z13510$color[z13510$mean_ot>=16]="red"
+z13510$color[z13510$mean_ot>=33]="green"
+z13510$color[z13510$mean_ot>=85]="blue"
+
+z13520$color<-"pink"
+z13520$color[z13520$fix_lam>=30]="red"
+z13520$color[z13520$fix_lam>=50]="green"
+
+
+z1351$color<-"pink"
+z1351$color[z1351$mean_ot>=16]="red"
+z1351$color[z1351$mean_ot>=33]="green"
+z1351$color[z1351$mean_ot>=85]="blue"
+
+z1355$color<-"pink"
+z1355$color[z1355$mean_ot>=16]="red"
+z1355$color[z1355$mean_ot>=33]="blue"
+z1355$color[z1355$mean_ot>=85]="green"
+
+
+```
+
+
+```{r}
+z1350a<-subset(z1350, z1350$avg_wt>=50)
+z1351a<-subset(z1351, z1351$avg_wt>=50)
+z1355a<-subset(z1355, z1355$avg_wt>=50)
+
+z1350b<-subset(z1350, z1350$avg_wt<40)
+z1351b<-subset(z1351, z1351$avg_wt<50)
+z1355b<-subset(z1355, z1355$avg_wt<50)
+```
+
+
+## Final model
+```{r}
+#final model and model selection
+lmn<-lm((op_num)~log(avg_wt)+mean_ot+fix_lam+mean_ot*fix_lam+log(avg_wt)*mean_ot+log(avg_wt)*fix_lam, data=z1350b)
+summary(lmn)
+par(mfrow=c(2,2))
+plot(lmn)
+plot(lmn)[4]
+
+library(bestglm)
+lmn2<-lm((op_num)~log(avg_wt)+mean_ot+fix_lam+mean_ot*fix_lam+log(avg_wt)*mean_ot+log(avg_wt)*fix_lam, data=z13510b,x=T)
+
+newframe = data.frame(cbind(lmn2$x[,-1],z13510b$op_num))
+bestm = bestglm(newframe, IC="LOOCV")
+print(bestm)
+
+
+```
+
+
+```{r}
+#plots for final model
+
+z13510b$color<-"pink"
+z13510b$color[z13510b$mean_ot>=16]="red"
+z13510b$color[z13510b$mean_ot>=33]="green"
+z13510b$color[z13510b$mean_ot>=85]="blue"
+
+z13520b$color<-"pink"
+z13520b$color[z13520b$fix_lam>=30]="red"
+z13520b$color[z13520b$fix_lam>=50]="green"
+
+par(mfrow=c(1,2)) 
+plot(z13510b$avg_wt,z13510b$op_num,col=z13510b$color,xlab="avg_wt",ylab="op_num (pause = 0)")
+legend(x="topright", legend = c("ot 7.6", "ot 16.3", "ot 33.6", "ot 85.5"), fill = c("pink","red","green","blue","white"))
+wt=((seq(from=0.0001,to=50,length.out=10000)))
+
+#use the model to predict the y-values based on the x-values
+y2=1.8370679+0.031970182*85.50360+0.054713089*2-0.2959874*log(wt)+0.045207435*85.50360*2-0.009199928*log(wt)*85.50360-0.029149372*log(wt)*2
+y3=1.8370679+0.031970182 *33.59451+0.054713089*5-0.2959874*log(wt)+0.045207435*33.59451*5-0.009199928*log(wt)*33.59451-0.029149372*log(wt)*5
+y4=1.8370679+0.031970182*16.3012+0.054713089*10-0.2959874*log(wt)+0.045207435*16.3012*10-0.009199928*log(wt)*16.3012-0.029149372*log(wt)*10
+y5=1.8370679+ 0.031970182*7.65283+0.054713089*20-0.2959874*log(wt)+0.045207435*7.65283*20-0.009199928*log(wt)*7.65283-0.029149372*log(wt)*20
+
+
+#add the fitted regression line to the plot (lwd specifies the width of the line)
+matlines((wt),y2, lwd=2,col="blue")
+matlines((wt),y3, lwd=2,col="green")
+matlines((wt),y4, lwd=2,col="red")
+matlines((wt),y5, lwd=2,col="pink")
+
+
+
+plot(z13520b$avg_wt,z13520b$op_num,col=z13520b$color,xlab="avg_wt",ylab="op_num (pause = 0)")
+legend(x="topright", legend = c("job_scale 10", "job_scale 30", "job_scale 50"), fill = c("pink","red","green","blue","white"))
+wt=((seq(from=0.0001,to=50,length.out=10000)))
+
+#use the model to predict the y-values based on the x-values
+y22=1.8370679+0.031970182*16.3012+0.054713089*10-0.2959874*log(wt)+0.045207435*16.3012*10-0.009199928*log(wt)*16.3012-0.029149372*log(wt)*10
+y32=1.8370679+0.031970182*16.3012+0.054713089*30-0.2959874*log(wt)+0.045207435*16.3012*30-0.009199928*log(wt)*16.3012-0.029149372*log(wt)*30
+y42=1.8370679+0.031970182*16.3012+0.054713089*50-0.2959874*log(wt)+0.045207435*16.3012*50-0.009199928*log(wt)*16.3012-0.029149372*log(wt)*50
+
+
+
+#add the fitted regression line to the plot (lwd specifies the width of the line)
+matlines((wt),y22, lwd=2,col="pink")
+matlines((wt),y32, lwd=2,col="red")
+matlines((wt),y42, lwd=2,col="green")
+
+
+```
+
+
+## Initial models
+```{r}
+
+plot(z1350$avg_wt)
+
+plot(z1350$avg_wt,z1350$op_num,col=z1350$color,xlab="avg_wt",ylab="op_num (pause = 0)")
+legend(x="topright", legend = c("ot 7.6", "ot 16.3", "ot 33.6", "ot 85.5"), fill = c("pink","red","green","blue","white"))
+wt=((seq(from=0.0001,to=50,length.out=10000)))
+
+#use the model to predict the y-values based on the x-values
+y2=10.3708161-0.0418161*2+0.0075633*85.50360-0.6541592*log(wt)
+y3=10.3708161-0.0418161*5+0.0075633*33.59451-0.6541592*log(wt)
+y4=10.3708161-0.0418161*10+0.0075633*16.3012-0.6541592*log(wt)
+y5=10.3708161-0.0418161*20+0.0075633*7.65283-0.6541592*log(wt)
+
+#add the fitted regression line to the plot (lwd specifies the width of the line)
+matlines((wt),y2, lwd=2,col="blue")
+matlines((wt),y3, lwd=2,col="green")
+matlines((wt),y4, lwd=2,col="red")
+matlines((wt),y5, lwd=2,col="pink")
+
+
+
+#with pauses(initial models)
+plot(z1351$eps,z1351$avg_wt,col=z1351$color,xlab="eps",ylab="avg_wt (pause = 1)")
+legend(x="topright", legend = c("ot 7.6", "ot 16.3", "ot 33.6", "ot 85.5"), fill = c("pink","red","green","blue","white"))
+
+plot(z1355$eps,z1355$avg_wt,col=z1355$color,xlab="eps",ylab="avg_wt (pause = 0.5)")
+legend(x="topright", legend = c("ot 7.6", "ot 16.3", "ot 33.6", "ot 85.5"), fill = c("pink","red","green","blue","white"))
+
+```
+
+
+```{r}
+
+#plots for data simulated by initial models
+plot(z1350b$eps,z1350b$avg_wt,col=z1350b$color,xlab="eps",ylab="avg_wt (pause = 0)")
+legend(x="topright", legend = c("ot 7.6", "ot 16.3", "ot 33.6", "ot 85.5"), fill = c("pink","red","green","blue","white"))
+
+plot(z1351b$eps,z1351b$avg_wt,col=z1351b$color,xlab="eps",ylab="avg_wt (pause = 1)")
+legend(x="topright", legend = c("ot 7.6", "ot 16.3", "ot 33.6", "ot 85.5"), fill = c("pink","red","green","blue","white"))
+
+plot(z1355b$eps,z1355b$avg_wt,col=z1355b$color,xlab="eps",ylab="avg_wt (pause = 1)")
+legend(x="topright", legend = c("ot 7.6", "ot 16.3", "ot 33.6", "ot 85.5"), fill = c("pink","red","green","blue","white"))
+
+plot(z1350a$eps,z1350a$avg_wt,col=z1350a$color,xlab="eps",ylab="avg_wt (pause = 0)")
+legend(x="topright", legend = c("ot 7.6", "ot 16.3", "ot 33.6", "ot 85.5"), fill = c("pink","red","green","blue","white"))
+
+
+abline(107.6408+0.8852*85.50360-1.6825*2, -954.0389 ,col="blue")
+abline(107.6408+0.8852*33.59451-1.6825*5,-954.0389 ,col="green")
+abline(107.6408+0.8852*16.3012-1.6825*10,-954.0389 ,col="red")
+abline(107.6408+0.8852*7.65283-1.6825*20, -954.0389 ,col="pink")
+```
+
+
+
+```{r}
+#hypothesized initial models
+lm<-lm((avg_wt)~(mean_ot)+eps+fix_lam+factor(pause_prob), data=z135)
+summary(lm)
+lm0<-lm((avg_wt)~(mean_ot)+eps+fix_lam, data=z1350b)
+summary(lm0)
+lm1<-lm((avg_wt)~(mean_ot)+eps+fix_lam, data=z1351b)
+summary(lm1)
+
+lm5<-lm((avg_wt)~(mean_ot)+eps+fix_lam, data=z1355b)
+summary(lm5)
+```
+
+
+```{r}
+plot(z1351b$avg_wt,z1351b$op_num,col=z1350$color,xlab="avg_wt",ylab="op_num (pause = 1)")
+legend(x="topright", legend = c("ot 7.6", "ot 16.3", "ot 33.6", "ot 85.5"), fill = c("pink","red","green","blue","white"))
+wt=((seq(from=0.0001,to=50,length.out=10000)))
+
+#use the model to predict the y-values based on the x-values
+
+y2=10.6158177+ 0.0108541 *85.50360-0.0933241*2-0.7464830*log(wt) 
+y3=10.6158177+ 0.0108541 *33.59451-0.0933241*5-0.7464830*log(wt)
+y4=10.6158177+ 0.0108541 *16.3012-0.0933241*10-0.7464830*log(wt) 
+y5=10.6158177+ 0.0108541*7.65283-0.0933241*20-0.7464830*log(wt) 
+
+# y2=10.3708161-0.0418161*2+0.0075633*85.50360-0.6541592*log(wt)
+# y3=10.3708161-0.0418161*5+0.0075633*33.59451-0.6541592*log(wt)
+# y4=10.3708161-0.0418161*10+0.0075633*16.3012-0.6541592*log(wt)
+# y5=10.3708161-0.0418161*20+0.0075633*7.65283-0.6541592*log(wt)
+
+#add the fitted regression line to the plot (lwd specifies the width of the line)
+matlines((wt),y2, lwd=2,col="blue")
+matlines((wt),y3, lwd=2,col="green")
+matlines((wt),y4, lwd=2,col="red")
+matlines((wt),y5, lwd=2,col="pink")
+```
+
+
+```{r}
+plot(z1355b$avg_wt,z1355b$op_num,col=z1350$color,xlab="avg_wt",ylab="op_num (pause = 0.5)")
+legend(x="topright", legend = c("ot 7.6", "ot 16.3", "ot 33.6", "ot 85.5"), fill = c("pink","red","green","blue","white"))
+wt=((seq(from=0.0001,to=50,length.out=10000)))
+
+#use the model to predict the y-values based on the x-values
+y2=10.8308717+ 0.0084981 *85.50360-0.1013855*2-0.7802317*log(wt) 
+y3=10.8308717+ 0.0084981 *33.59451-0.1013855*5-0.7802317*log(wt)
+y4=10.8308717+ 0.0084981 *16.3012-0.1013855*10-0.7802317*log(wt) 
+y5=10.8308717+ 0.0084981*7.65283-0.1013855*20-0.7802317*log(wt) 
+
+
+#add the fitted regression line to the plot (lwd specifies the width of the line)
+matlines((wt),y2, lwd=2,col="blue")
+matlines((wt),y3, lwd=2,col="green")
+matlines((wt),y4, lwd=2,col="red")
+matlines((wt),y5, lwd=2,col="pink")
+```
+
+
+
+```{r}
+
+testplm = lm((avg_wt) ~(cus_num)+(eps), data=testp)
+summary(testplm)
+testnplm = lm((avg_wt) ~(cus_num)+(eps), data=testnp)
+summary(testnplm)
+```
+
+```{r}
+#paused
+
+testdpe = lm((avg_wt) ~(op_num), data=testdp)
+plot((avg_wt) ~(op_num), data=testdp)
+abline(testdpe)
+
+testpe = lm((avg_wt) ~(eps), data=testp)
+plot((avg_wt) ~(eps), data=testp,xlim=c(0,0.2))
+abline(testpe)
+```
+```{r}
+testpe2 = lm((avg_wt) ~log(eps), data=test1np)
+
+summary(testpe2)
+
+
+plot((avg_wt) ~(eps), data=test1np)
+
+
+#define x-values to use for regression line
+op_num=((seq(from=0.0001,to=0.5,length.out=1000)))
+
+#use the model to predict the y-values based on the x-values
+y2=5814.5-2501.7*log(op_num)
+
+#add the fitted regression line to the plot (lwd specifies the width of the line)
+matlines((op_num),y2, lwd=2)
+```
+
+```{r}
+
+testdnpe = lm((avg_wt) ~(eps), data=testdnp)
+summary(testdnpe)
+
+plot((avg_wt) ~(eps), data=testdnp)
+abline(testdnpe)
+
+#no pause
+testnpe = lm((avg_wt) ~(eps), data=testnp)
+summary(testnpe)
+plot(testnpe)
+plot((avg_wt) ~(eps), data=testnp)
+abline(testnpe)
+```
+```{r}
+testnpe2 = lm((avg_wt) ~log(eps), data=test1nnp)
+
+summary(testnpe2)
+plot((avg_wt) ~(eps), data=test1nnp)
+
+
+#define x-values to use for regression line
+op_num=((seq(from=0.0001,to=0.5,length.out=1000)))
+
+
+#use the model to predict the y-values based on the x-values
+#y2=4791.2 -2076.4*log(op_num)
+
+#add the fitted regression line to the plot (lwd specifies the width of the line)
+#matlines((op_num),y2, lwd=2)
+```
+
+
+```{r}
+#relationship depends on pause prob
+confint(testplm, level=0.9)
+confint(testnplm, level=0.9)
+```
+
+
+```{r}
+#pause linear fit
+par(mfrow=c(2,2))
+plot(testplm)
+```
+
+```{r}
+#no pause linear fit
+par(mfrow=c(2,2))
+plot(testnplm)
+```
+
+
+```{r}
+#pause ply fit
+par(mfrow=c(2,2))
+testppl<-lm(testp$avg_wt ~ polym(testp$cus_num, testp$eps,degree=2))
+plot(testppl)
+summary(testppl)
+
+```
+
+```{r}
+#no pause ply fit
+par(mfrow=c(2,2))
+testnppl<-lm(testnp$avg_wt ~ polym(testnp$cus_num, testnp$eps,degree=2))
+plot(testnppl)
+summary(testnppl)
+```
+
+
+
